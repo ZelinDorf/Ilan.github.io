@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ilan – Portfolio (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f1147; --paper:#f4f0ff; --sun:#ffc93c; --night:#0d0624;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#12082e;color:var(--ink);font:400 1.0625rem/1.55 var(--body);overflow:hidden}
+:focus-visible{outline:3px solid var(--sun);outline-offset:4px}
+
+.space{position:fixed;inset:0;overflow:hidden;
+  background:radial-gradient(ellipse at 30% 20%,#3a1a8a 0,#1b0c4a 45%,var(--night) 100%)}
+.world{--W:1600;--H:1000;position:absolute;left:0;top:0;width:calc(var(--W)*1px);height:calc(var(--H)*1px);
+  transform-origin:0 0;transition:transform 1.3s cubic-bezier(.65,0,.25,1)}
+.star{position:absolute;border-radius:50%;background:#fff}
+
+.planet{position:absolute;padding:0;cursor:pointer;
+  left:calc(var(--x)*1px - var(--s)*.5px);top:calc(var(--y)*1px - var(--s)*.5px);
+  width:calc(var(--s)*1px);height:calc(var(--s)*1px);border-radius:50%;
+  border:5px solid var(--paper);box-shadow:8px 8px 0 var(--night);transition:transform .2s;
+  background:
+   radial-gradient(circle at 32% 28%,var(--c1) 0 20%,transparent 20.2%),
+   radial-gradient(circle at 32% 28%,var(--c2) 0 46%,transparent 46.2%),
+   radial-gradient(circle at 32% 28%,var(--c3) 0 78%,transparent 78.2%),
+   var(--c4)}
+.planet:hover{transform:scale(1.05)}
+.label{position:absolute;left:50%;top:100%;margin-top:20px;transform:translateX(-50%);white-space:nowrap;
+  font:800 34px/1 var(--display);color:var(--paper);transition:opacity .4s}
+.world.focused .label{opacity:0}
+
+.p-projets{--x:420;--y:390;--s:300;--mx:300;--my:300;--c1:#ffd1e0;--c2:#ff9dbb;--c3:#ff5d8f;--c4:#b02a69}
+.p-competences{--x:1180;--y:300;--s:220;--mx:510;--my:640;--c1:#cfe1ff;--c2:#8db8ff;--c3:#4c8dff;--c4:#2a4fb0}
+.p-apropos{--x:700;--y:760;--s:200;--mx:200;--my:880;--c1:#fff3c4;--c2:#ffe07a;--c3:#ffc93c;--c4:#d9902a}
+.p-contact{--x:1340;--y:740;--s:170;--mx:500;--my:1010;--c1:#c7fff6;--c2:#7ee8d9;--c3:#19c3b1;--c4:#0b7a80}
+@media (max-aspect-ratio:1/1){
+  .world{--W:700;--H:1150}
+  .planet{--x:var(--mx);--y:var(--my)}
+}
+
+.hud{position:fixed;z-index:5;left:calc(1.25rem + env(safe-area-inset-left,0px));top:calc(1rem + env(safe-area-inset-top,0px));
+  display:flex;flex-direction:column;gap:.75rem;align-items:flex-start}
+.brand{font:800 1.7rem var(--display);color:var(--paper);margin:0}
+.back{font:600 1rem var(--body);color:var(--ink);background:var(--sun);border:3px solid var(--ink);border-radius:999px;
+  padding:.5rem 1rem;box-shadow:4px 4px 0 var(--night);cursor:pointer}
+.hint{position:fixed;z-index:5;left:0;right:0;text-align:center;color:var(--paper);
+  bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));margin:0;font-weight:600}
+
+.panel{position:fixed;z-index:4;right:4vw;top:50%;transform:translateY(-50%);width:min(520px,44vw);max-height:78vh;
+  overflow:auto;background:var(--paper);border:3px solid var(--ink);border-radius:24px;box-shadow:6px 6px 0 var(--night);
+  padding:1.5rem 1.75rem;opacity:0;transition:opacity .4s}
+.panel.in{opacity:1;transition-delay:.8s}
+.panel h2{font:800 2rem/1.1 var(--display);margin:0 0 1rem;display:inline-block;padding:.1rem .7rem;
+  border:3px solid var(--ink);border-radius:12px;background:var(--acc)}
+.panel h2:focus{outline:none}
+.panel h3{font:800 1.3rem/1.2 var(--display);margin:1.1rem 0 .3rem}
+.panel p{margin:0 0 .8rem}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:0;padding:0}
+.tags li{background:#fff;border:2px solid var(--ink);border-radius:999px;padding:.1rem .8rem;font-weight:600;font-size:.95rem}
+.btns{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
+.btn{display:inline-block;font-weight:600;text-decoration:none;color:var(--ink);background:var(--acc);border:3px solid var(--ink);
+  border-radius:999px;padding:.5rem 1.2rem;box-shadow:3px 3px 0 var(--ink)}
+.btn.alt{background:#fff}
+.todo{background:var(--sun);padding:0 .3em;border-radius:4px;font-weight:600}
+
+@media (max-aspect-ratio:1/1){
+  .panel{left:4vw;right:4vw;top:auto;bottom:calc(3vw + env(safe-area-inset-bottom,0px));transform:none;width:auto;max-height:50vh;padding:1.1rem 1.25rem}
+  .hint{bottom:calc(.75rem + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){.world,.panel,.planet{transition:none}.panel.in{transition-delay:0s}}
+</style>
+</head>
+<body>
+<div class="space" id="space">
+  <div class="world" id="world">
+    <button class="planet p-projets" data-panel="projets"><span class="label">Projets</span></button>
+    <button class="planet p-competences" data-panel="competences"><span class="label">Compétences</span></button>
+    <button class="planet p-apropos" data-panel="apropos"><span class="label">À propos</span></button>
+    <button class="planet p-contact" data-panel="contact"><span class="label">Contact</span></button>
+  </div>
+</div>
+
+<div class="hud">
+  <p class="brand">Ilan</p>
+  <button class="back" id="back" hidden>← Retour dans l’espace</button>
+</div>
+<p class="hint" id="hint">Choisis une planète pour y voyager.</p>
+
+<section class="panel" id="panel-projets" style="--acc:#ff5d8f" hidden aria-labelledby="t-projets">
+  <h2 id="t-projets" tabindex="-1">Projets</h2>
+  <h3>Yuv-Tales</h3>
+  <p>Un jeu Unity au rendu cel shading, inspiré de Monster Hunter Stories, avec un compagnon que l’on peut chevaucher.</p>
+  <h3>Kho’Shaï</h3>
+  <p>Un jeu de rôle construit autour d’une langue inventée, avec une énigme de chiffrement façon pierre de Rosette.</p>
+</section>
+
+<section class="panel" id="panel-competences" style="--acc:#4c8dff" hidden aria-labelledby="t-competences">
+  <h2 id="t-competences" tabindex="-1">Compétences</h2>
+  <ul class="tags">
+    <li>Unity</li><li>C#</li><li>Shaders URP</li><li>Cel shading</li><li>NavMesh</li>
+    <li>Machines à états</li><li>Interface animée</li><li>Git</li><li>Worldbuilding</li><li>Langues construites</li>
+  </ul>
+</section>
+
+<section class="panel" id="panel-apropos" style="--acc:#ffc93c" hidden aria-labelledby="t-apropos">
+  <h2 id="t-apropos" tabindex="-1">À propos</h2>
+  <p>Étudiant en <span class="todo">[ta formation, ton école]</span>. Ce qui m’attire dans le jeu vidéo, c’est l’endroit où la technique rencontre l’invention : un shader qui donne un style, une langue qui donne un monde.</p>
+  <p><span class="todo">[Un détail perso à ajouter ici.]</span></p>
+</section>
+
+<section class="panel" id="panel-contact" style="--acc:#19c3b1" hidden aria-labelledby="t-contact">
+  <h2 id="t-contact" tabindex="-1">Contact</h2>
+  <p>Je cherche un stage en développement de jeux. Écris-moi, ou regarde le code de mes projets.</p>
+  <div class="btns">
+    <a class="btn" href="mailto:ton.email@exemple.com">Envoyer un mail</a>
+    <a class="btn alt" href="https://github.com/TON-PSEUDO">Voir mon GitHub</a>
+  </div>
+  <p style="margin-top:1rem"><span class="todo">[Remplace le mail et le lien GitHub.]</span></p>
+</section>
+
+<script>
+(function(){
+  var space=document.getElementById('space'), world=document.getElementById('world');
+  var back=document.getElementById('back'), hint=document.getElementById('hint');
+  var planets=[].slice.call(world.querySelectorAll('.planet'));
+  var current=null, activePanel=null;
+
+  // Étoiles : de petits points placés au hasard dans le « monde »
+  for(var i=0;i<140;i++){
+    var s=document.createElement('span'), d=1+Math.random()*3.5;
+    s.className='star';
+    s.style.cssText='left:'+(Math.random()*2800-600)+'px;top:'+(Math.random()*2200-500)+'px;width:'+d+'px;height:'+d+'px;opacity:'+(.3+Math.random()*.7);
+    world.insertBefore(s,world.firstChild);
+  }
+
+  function num(el,name){ return parseFloat(getComputedStyle(el).getPropertyValue(name)); }
+
+  // La « caméra » : on déplace et on agrandit tout le monde d'un coup
+  function camera(){
+    var vw=space.clientWidth, vh=space.clientHeight;
+    var W=num(world,'--W'), H=num(world,'--H'), scale, tx, ty;
+    if(!current){
+      scale=Math.min(vw/W,vh/H);
+      tx=(vw-W*scale)/2; ty=(vh-H*scale)/2;
+    }else{
+      var x=num(current,'--x'), y=num(current,'--y'), size=num(current,'--s');
+      var portrait=vw<=vh;
+      var diameter=portrait?Math.min(vw*.7,vh*.34):Math.min(vw*.42,vh*.7);
+      scale=diameter/size;
+      tx=(portrait?vw*.5:vw*.28)-x*scale;
+      ty=(portrait?vh*.22:vh*.5)-y*scale;
+    }
+    world.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  }
+
+  function closePanel(){
+    if(!activePanel) return;
+    var p=activePanel; activePanel=null;
+    p.classList.remove('in');
+    setTimeout(function(){ if(!p.classList.contains('in')) p.hidden=true; },300);
+  }
+
+  function travel(planet){
+    if(current===planet) return;
+    closePanel();
+    current=planet;
+    world.classList.add('focused');
+    back.hidden=false; hint.hidden=true;
+    camera();
+    var panel=document.getElementById('panel-'+planet.dataset.panel);
+    panel.hidden=false; void panel.offsetWidth; panel.classList.add('in');
+    activePanel=panel;
+    panel.querySelector('h2').focus({preventScroll:true});
+  }
+
+  function goHome(){
+    if(!current) return;
+    var previous=current;
+    closePanel(); current=null;
+    world.classList.remove('focused');
+    back.hidden=true; hint.hidden=false;
+    camera();
+    previous.focus();
+  }
+
+  planets.forEach(function(p){ p.addEventListener('click',function(){ travel(p); }); });
+  back.addEventListener('click',goHome);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') goHome(); });
+  window.addEventListener('resize',camera);
+  camera();
+})();
+</script>
+</body>
+</html>
