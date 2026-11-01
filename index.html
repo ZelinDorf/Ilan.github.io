@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ilan – Portfolio</title>
+<meta name="description" content="Portfolio d’Ilan, étudiant et développeur de jeux : Unity, shaders, gameplay et mondes inventés.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f1147; --paper:#f4f0ff; --pink:#ff5d8f; --sun:#ffc93c;
+  --teal:#19c3b1; --blue:#4c8dff; --violet:#8a3ffc;
+  --line:3px solid var(--ink); --pop:6px 6px 0 var(--ink);
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.6 var(--body)}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 1.25rem}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0}
+h2{font-size:clamp(2rem,5vw,3rem);font-weight:800;margin-bottom:1.5rem}
+p{margin:0 0 1rem;max-width:62ch}
+.todo{background:var(--sun);padding:0 .3em;border-radius:4px;font-weight:600}
+
+header .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:1.25rem;padding-bottom:1.25rem}
+.logo{font:800 1.5rem var(--display);text-decoration:none}
+nav{display:flex;gap:1.25rem;font-weight:600}
+nav a{text-decoration:none;padding:.25rem 0;border-bottom:3px solid transparent}
+nav a:hover{border-color:var(--pink)}
+
+.hero{padding:2.5rem 0 4.5rem}
+.hero .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:2.5rem;align-items:center}
+.hero h1{font-size:clamp(4.5rem,14vw,9rem);font-weight:800;letter-spacing:-.03em;color:var(--violet);
+  text-shadow:5px 5px 0 var(--ink)}
+.hero .lead{font:600 clamp(1.4rem,3vw,2rem)/1.25 var(--display);margin:1rem 0 1rem;max-width:20ch}
+.btns{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:1.5rem}
+.btn{display:inline-block;font-weight:600;text-decoration:none;background:var(--pink);border:var(--line);
+  border-radius:999px;padding:.7rem 1.4rem;box-shadow:4px 4px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn.alt{background:#fff}
+
+.stage{display:grid;place-items:center;gap:1rem;text-align:center}
+.sphere{--lx:32%;--ly:26%;width:min(340px,72vw);aspect-ratio:1;border-radius:50%;border:var(--line);box-shadow:var(--pop);
+  background:
+   radial-gradient(circle at var(--lx) var(--ly),#fff 0 5%,transparent 5.2%),
+   radial-gradient(circle at var(--lx) var(--ly),#ffe08a 0 26%,transparent 26.2%),
+   radial-gradient(circle at var(--lx) var(--ly),#ff9dbb 0 52%,transparent 52.2%),
+   radial-gradient(circle at var(--lx) var(--ly),var(--pink) 0 82%,transparent 82.2%),
+   var(--violet)}
+.stage small{font-size:.9rem;max-width:30ch}
+
+section{padding:4rem 0}
+.feature{background:var(--sun);border:var(--line);border-radius:28px;box-shadow:var(--pop);padding:clamp(1.5rem,4vw,2.75rem);
+  display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.feature h3,.second h3{font-size:clamp(1.9rem,4vw,2.6rem);font-weight:800;margin-bottom:.75rem}
+.feature ul,.second ul{margin:0;padding-left:1.2rem}
+.feature li,.second li{margin-bottom:.6rem}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem;padding:0;list-style:none}
+.tags li{margin:0;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:.1rem .8rem;font-weight:600;font-size:.95rem}
+.second{background:var(--teal);border:var(--line);border-radius:28px;box-shadow:var(--pop);margin-top:2.25rem;
+  padding:clamp(1.5rem,4vw,2.75rem);display:grid;grid-template-columns:.9fr 1.1fr;gap:2rem}
+
+.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem}
+.skill{border:var(--line);border-radius:20px;padding:1.25rem;background:#fff}
+.skill h3{font-size:1.35rem;margin-bottom:.6rem;display:inline-block;padding:.1rem .6rem;border:var(--line);border-radius:10px}
+.skill:nth-child(1) h3{background:var(--blue)}
+.skill:nth-child(2) h3{background:var(--pink)}
+.skill:nth-child(3) h3{background:var(--sun)}
+.skill:nth-child(4) h3{background:var(--teal)}
+.skill ul{margin:0;padding-left:1.2rem}
+
+.about{background:var(--ink);color:var(--paper)}
+.about h2{color:var(--sun)}
+.contact{text-align:center}
+.contact p{margin-left:auto;margin-right:auto}
+.contact .btns{justify-content:center}
+footer{padding:2rem 0;text-align:center;font-size:.9rem}
+
+@media (max-width:800px){
+  .hero .wrap,.feature,.second{grid-template-columns:1fr}
+  nav{gap:.9rem;font-size:.95rem}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="#top">Ilan</a>
+    <nav aria-label="Navigation principale">
+      <a href="#projets">Projets</a>
+      <a href="#competences">Compétences</a>
+      <a href="#apropos">À propos</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero" id="hero">
+    <div class="wrap">
+      <div>
+        <h1>Ilan</h1>
+        <p class="lead">Je crée des jeux, de leurs shaders à leurs langues inventées.</p>
+        <p>Étudiant en <span class="todo">[ta formation, ton école]</span>, je cherche un stage en développement de jeux.</p>
+        <div class="btns">
+          <a class="btn" href="#projets">Voir mes projets</a>
+          <a class="btn alt" href="#contact">Me contacter</a>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="sphere" id="sphere" role="img" aria-label="Sphère en cel shading dont la lumière suit le pointeur"></div>
+        <small>Bouge la souris : la lumière se déplace, les bandes restent nettes. C’est du cel shading, version CSS.</small>
+      </div>
+    </div>
+  </div>
+
+  <section id="projets">
+    <div class="wrap">
+      <h2>Projets</h2>
+
+      <article class="feature">
+        <div>
+          <h3>Yuv-Tales</h3>
+          <p>Un jeu Unity au rendu cel shading, inspiré de Monster Hunter Stories, où l’on voyage avec un compagnon qu’on peut chevaucher.</p>
+          <ul class="tags" aria-label="Technologies">
+            <li>Unity 6</li><li>C#</li><li>URP</li><li>NavMesh</li><li>Git</li>
+          </ul>
+        </div>
+        <ul>
+          <li><strong>Rendu :</strong> shader de cel shading maison, avec des bandes de lumière obtenues en quantifiant le NdotL, et une eau toon.</li>
+          <li><strong>Monde :</strong> terrain construit à partir de heightmaps, puis peint en textures.</li>
+          <li><strong>Gameplay :</strong> sprint et endurance pilotés par une machine à états.</li>
+          <li><strong>Compagnon :</strong> suivi par NavMesh, et système de monte pour chevaucher zmiraa.</li>
+          <li><strong>Interface :</strong> roue animée pour la vie et l’endurance.</li>
+        </ul>
+      </article>
+
+      <article class="second">
+        <div>
+          <h3>Kho’Shaï</h3>
+          <p>Un jeu de rôle construit autour de sa propre langue inventée.</p>
+          <ul class="tags" aria-label="Domaines">
+            <li>Worldbuilding</li><li>Langue construite</li><li>Game design</li>
+          </ul>
+        </div>
+        <ul>
+          <li><strong>Énigme :</strong> un chiffrement façon pierre de Rosette que le joueur doit décoder.</li>
+          <li><strong>Lore :</strong> des noms de plantes inventés par jeux d’anagrammes.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section id="competences">
+    <div class="wrap">
+      <h2>Compétences</h2>
+      <div class="skills">
+        <div class="skill"><h3>Code</h3><ul><li>C# et Unity</li><li>Git et GitHub</li></ul></div>
+        <div class="skill"><h3>Rendu</h3><ul><li>Shaders sous URP</li><li>Cel shading</li><li>Terrain</li></ul></div>
+        <div class="skill"><h3>Gameplay</h3><ul><li>IA avec NavMesh</li><li>Machines à états</li><li>Interface animée</li></ul></div>
+        <div class="skill"><h3>Univers</h3><ul><li>Worldbuilding</li><li>Langues construites</li><li>Énigmes</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about" id="apropos">
+    <div class="wrap">
+      <h2>À propos</h2>
+      <p>Je suis étudiant en <span class="todo">[ta formation, ton école]</span>. Ce qui m’attire dans le jeu vidéo, c’est l’endroit où la technique rencontre l’invention : un shader qui donne un style, une langue qui donne un monde.</p>
+      <p><span class="todo">[Ajoute un détail perso : tes jeux préférés, tes hobbies, ce que tu cherches.]</span></p>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <h2>On travaille ensemble ?</h2>
+      <p>Je cherche un stage en développement de jeux. Écris-moi, ou regarde le code de mes projets.</p>
+      <div class="btns">
+        <a class="btn" href="mailto:ton.email@exemple.com">Envoyer un mail</a>
+        <a class="btn alt" href="https://github.com/TON-PSEUDO">Voir mon GitHub</a>
+      </div>
+      <p><span class="todo">[Remplace l’adresse mail et le lien GitHub ci-dessus.]</span></p>
+    </div>
+  </section>
+</main>
+
+<footer>© <span id="year">2026</span> Ilan</footer>
+
+<script>
+(function(){
+  var hero=document.getElementById('hero'), s=document.getElementById('sphere');
+  document.getElementById('year').textContent=new Date().getFullYear();
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function move(e){
+    var r=s.getBoundingClientRect();
+    var x=(e.clientX-r.left)/r.width*100, y=(e.clientY-r.top)/r.height*100;
+    s.style.setProperty('--lx',Math.max(-20,Math.min(120,x))+'%');
+    s.style.setProperty('--ly',Math.max(-20,Math.min(120,y))+'%');
+  }
+  hero.addEventListener('pointermove',move);
+  hero.addEventListener('pointerleave',function(){
+    s.style.setProperty('--lx','32%'); s.style.setProperty('--ly','26%');
+  });
+})();
+</script>
+</body>
+</html>
