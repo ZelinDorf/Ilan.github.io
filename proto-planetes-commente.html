@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  PORTFOLIO EN PLANÈTES : VERSION COMMENTÉE
+  ============================================================
+  Un fichier web = 3 langages dans un seul fichier :
+
+    1. HTML       : le CONTENU (les objets de la scène)        -> dans <body>
+    2. CSS        : l'APPARENCE (couleurs, tailles, positions) -> dans <style>
+    3. JavaScript : le COMPORTEMENT (orbites, caméra, clics)   -> dans <script>
+
+  Conseil de lecture : commence par le <body> (le HTML, court),
+  puis lis le CSS, et termine par le JavaScript.
+
+  Un commentaire HTML s'écrit comme celui-ci.
+  En CSS : /* ... */      En JavaScript : // ...
+-->
+<html lang="fr">
+<head>
+<!-- Le <head> contient les infos SUR la page (rien de visible ici) -->
+<meta charset="utf-8"> <!-- pour que les accents s'affichent bien -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> <!-- pour le mobile -->
+<title>Ilan – Portfolio (prototype)</title> <!-- texte de l'onglet du navigateur -->
+
+<!-- Chargement de deux polices depuis Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   CSS : L'APPARENCE
+   Principe : on écrit  sélecteur { propriété: valeur; }
+   Le sélecteur dit QUOI styliser (ex : .planet = tout élément
+   qui a class="planet"), les propriétés disent COMMENT.
+   ============================================================ */
+
+/* --- Variables CSS ---
+   :root = la page entière. Ce qu'on déclare ici est réutilisable
+   partout avec var(--nom). Comme des constantes en C#.
+   Changer une couleur ici la change partout. */
+:root{
+  --ink:#1f1147;      /* violet très foncé : texte et contours */
+  --paper:#f4f0ff;    /* blanc légèrement violet */
+  --sun:#ffc93c;      /* jaune */
+  --night:#0d0624;    /* presque noir : ombres */
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;  /* police des titres (+ polices de secours) */
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;        /* police du texte */
+}
+
+/* L'attribut hidden doit TOUJOURS cacher l'élément, quoi qu'il arrive */
+[hidden]{display:none!important}
+
+/* box-sizing : la largeur d'un élément inclut sa bordure (plus simple à calculer) */
+*{box-sizing:border-box}
+
+html,body{height:100%;margin:0}  /* la page prend tout l'écran, sans marge */
+body{
+  background:#12082e;
+  color:var(--ink);
+  font:400 1.0625rem/1.55 var(--body);   /* raccourci : graisse taille/interligne police */
+  overflow:hidden;                       /* pas de barre de défilement : on navigue avec la caméra */
+}
+
+/* Contour visible quand on navigue au clavier (accessibilité) */
+:focus-visible{outline:3px solid var(--sun);outline-offset:4px}
+
+/* --- L'ESPACE : la "fenêtre" de jeu ---
+   position:fixed + inset:0 = l'élément colle aux 4 bords de l'écran.
+   overflow:hidden = tout ce qui dépasse est coupé (comme le cadre d'une caméra). */
+.space{
+  position:fixed;inset:0;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 50%,#3a1a8a 0,#1b0c4a 45%,var(--night) 100%); /* dégradé du centre vers les bords */
+}
+
+/* --- LE MONDE : la grande scène qu'on déplace ---
+   Tous les astres sont DANS .world. Pour "voyager", on ne bouge pas
+   les planètes : on déplace et on agrandit .world tout entier. C'est la caméra.
+   --W et --H = largeur et hauteur du monde, --core = taille du soleil.
+   transform-origin:0 0 = le zoom part du coin haut-gauche.
+   transition = le changement de transform est animé sur 1,3 s (courbe douce). */
+.world{
+  --W:1600;--H:1000;--core:180;
+  position:absolute;left:0;top:0;
+  width:calc(var(--W)*1px);height:calc(var(--H)*1px);   /* calc() permet de faire des maths : nombre × 1px */
+  transform-origin:0 0;
+  transition:transform 1.3s cubic-bezier(.65,0,.25,1);
+}
+
+/* Une étoile = un petit rond blanc (créé par le JavaScript plus bas) */
+.star{position:absolute;border-radius:50%;background:#fff}
+
+/* Une orbite = un cercle en pointillés centré sur le soleil.
+   border-radius:50% transforme un rectangle en ellipse.
+   pointer-events:none = on peut cliquer "à travers". */
+.orbit{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);  /* centré */
+  border:2px dashed rgba(244,240,255,.22);border-radius:50%;
+  pointer-events:none;transition:opacity .6s;
+}
+/* Quand le monde a la classe "focused" (on est sur une planète), les orbites disparaissent */
+.world.focused .orbit{opacity:0}
+
+/* --- LE SOLEIL ---
+   Le "relief" vient de 4 dégradés radiaux empilés, avec des arrêts NETS
+   (ex : "#fff7cf 0 22%, transparent 22.2%" = couleur jusqu'à 22 % puis rien).
+   Les bords nets créent les bandes de lumière : c'est du cel shading en CSS.
+   Le point de lumière est à 32% / 28% (haut-gauche). */
+.sun{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;
+  width:calc(var(--core)*1px);height:calc(var(--core)*1px);border-radius:50%;
+  display:grid;place-items:center;                       /* centre le texte "Ilan" */
+  font:800 calc(var(--core)*.3px)/1 var(--display);      /* la taille du texte suit la taille du soleil */
+  color:var(--ink);border:5px solid var(--paper);
+  box-shadow:8px 8px 0 var(--night),0 0 90px 30px rgba(255,201,60,.35);  /* 1) ombre dure  2) halo lumineux */
+  background:
+   radial-gradient(circle at 32% 28%,#fff7cf 0 22%,transparent 22.2%),
+   radial-gradient(circle at 32% 28%,#ffe38a 0 50%,transparent 50.2%),
+   radial-gradient(circle at 32% 28%,#ffc93c 0 80%,transparent 80.2%),
+   #ff8a3c;                                              /* couleur de fond = la zone dans l'ombre */
+}
+
+/* --- LES PLANÈTES ---
+   Même technique que le soleil. Leur position vient de deux variables
+   (--x et --y) que le JavaScript met à jour à chaque image.
+   left/top = centre (--x,--y) moins la moitié de la taille (--s),
+   pour que (--x,--y) soit bien le CENTRE de la planète. */
+.planet{
+  position:absolute;padding:0;cursor:pointer;
+  left:calc(var(--x)*1px - var(--s)*.5px);
+  top:calc(var(--y)*1px - var(--s)*.5px);
+  width:calc(var(--s)*1px);height:calc(var(--s)*1px);
+  border-radius:50%;
+  border:5px solid var(--paper);box-shadow:8px 8px 0 var(--night);
+  transition:transform .2s;
+  background:
+   radial-gradient(circle at 32% 28%,var(--c1) 0 20%,transparent 20.2%),
+   radial-gradient(circle at 32% 28%,var(--c2) 0 46%,transparent 46.2%),
+   radial-gradient(circle at 32% 28%,var(--c3) 0 78%,transparent 78.2%),
+   var(--c4);      /* --c1 à --c4 = les 4 teintes, de la plus claire à la plus sombre */
+}
+.planet:hover{transform:scale(1.06)}   /* au survol : légèrement plus grosse */
+
+/* Le nom de la planète, placé juste en dessous */
+.label{
+  position:absolute;left:50%;top:100%;margin-top:20px;transform:translateX(-50%);
+  white-space:nowrap;font:800 34px/1 var(--display);color:var(--paper);
+  transition:opacity .4s;
+}
+.world.focused .label{opacity:0}   /* les noms disparaissent quand on est sur une planète */
+
+/* --- RÉGLAGES DE CHAQUE PLANÈTE ---
+   Une classe par planète, avec ses réglages sous forme de variables :
+     --s   taille sur ordinateur        --ms  taille sur mobile
+     --a   rayon d'orbite (0 = au soleil, 1 = tout au bord)
+     --w   vitesse de rotation (radians par seconde)
+     --t   angle de départ (en radians, 0 à 6,28 = un tour complet)
+     --c1..--c4  les couleurs
+   Pour modifier une planète, c'est ici ! */
+.p-projets{--s:200;--ms:150;--a:1;--w:.042;--t:5;--c1:#ffd1e0;--c2:#ff9dbb;--c3:#ff5d8f;--c4:#b02a69}
+.p-competences{--s:170;--ms:130;--a:.88;--w:.06;--t:2.2;--c1:#cfe1ff;--c2:#8db8ff;--c3:#4c8dff;--c4:#2a4fb0}
+.p-apropos{--s:150;--ms:115;--a:.74;--w:.085;--t:3.6;--c1:#fff3c4;--c2:#ffe07a;--c3:#ffc93c;--c4:#d9902a}
+.p-contact{--s:130;--ms:100;--a:.58;--w:.12;--t:.8;--c1:#c7fff6;--c2:#7ee8d9;--c3:#19c3b1;--c4:#0b7a80}
+
+/* --- MOBILE ---
+   Cette règle ne s'applique que si l'écran est plus haut que large (téléphone en portrait).
+   On change alors la forme du monde (800×1200 au lieu de 1600×1000),
+   on réduit le soleil, et les planètes prennent leur taille --ms. */
+@media (max-aspect-ratio:1/1){
+  .world{--W:800;--H:1200;--core:130}
+  .planet{--s:var(--ms)}
+}
+
+/* --- L'INTERFACE PAR-DESSUS LE MONDE ---
+   z-index = l'ordre d'empilement : plus il est grand, plus l'élément est devant. */
+.hud{position:fixed;z-index:2000;left:calc(1.25rem + env(safe-area-inset-left,0px));top:calc(1rem + env(safe-area-inset-top,0px))}
+.back{
+  font:600 1rem var(--body);color:var(--ink);background:var(--sun);
+  border:3px solid var(--ink);border-radius:999px;padding:.5rem 1rem;
+  box-shadow:4px 4px 0 var(--night);cursor:pointer;
+}
+.hint{
+  position:fixed;z-index:2000;left:0;right:0;text-align:center;color:var(--paper);
+  bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));margin:0;font-weight:600;
+}
+
+/* --- LES PANNEAUX DE CONTENU ---
+   Un panneau par planète. Ils sont invisibles (opacity:0) jusqu'à ce que
+   le JavaScript leur ajoute la classe "in". Le transition-delay de 0,8 s
+   les fait apparaître APRÈS l'arrivée de la caméra. */
+.panel{
+  position:fixed;z-index:1500;right:4vw;top:50%;transform:translateY(-50%);
+  width:min(520px,44vw);max-height:78vh;overflow:auto;
+  background:var(--paper);border:3px solid var(--ink);border-radius:24px;
+  box-shadow:6px 6px 0 var(--night);padding:1.5rem 1.75rem;
+  opacity:0;transition:opacity .4s;
+}
+.panel.in{opacity:1;transition-delay:.8s}
+.panel h2{
+  font:800 2rem/1.1 var(--display);margin:0 0 1rem;display:inline-block;padding:.1rem .7rem;
+  border:3px solid var(--ink);border-radius:12px;
+  background:var(--acc);    /* --acc = couleur d'accent, définie sur chaque panneau dans le HTML */
+}
+.panel h2:focus{outline:none}
+.panel h3{font:800 1.3rem/1.2 var(--display);margin:1.1rem 0 .3rem}
+.panel p{margin:0 0 .8rem}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:0;padding:0}   /* flex : les puces se rangent et passent à la ligne */
+.tags li{background:#fff;border:2px solid var(--ink);border-radius:999px;padding:.1rem .8rem;font-weight:600;font-size:.95rem}
+.btns{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
+.btn{
+  display:inline-block;font-weight:600;text-decoration:none;color:var(--ink);background:var(--acc);
+  border:3px solid var(--ink);border-radius:999px;padding:.5rem 1.2rem;box-shadow:3px 3px 0 var(--ink);
+}
+.btn.alt{background:#fff}
+.todo{background:var(--sun);padding:0 .3em;border-radius:4px;font-weight:600}   /* surligne les textes à remplacer */
+
+/* Sur mobile, le panneau devient un "tiroir" collé en bas de l'écran */
+@media (max-aspect-ratio:1/1){
+  .panel{left:4vw;right:4vw;top:auto;bottom:calc(3vw + env(safe-area-inset-bottom,0px));transform:none;width:auto;max-height:50vh;padding:1.1rem 1.25rem}
+  .hint{bottom:calc(.75rem + env(safe-area-inset-bottom,0px))}
+}
+
+/* Si la personne a désactivé les animations dans son système, on les coupe */
+@media (prefers-reduced-motion:reduce){.world,.panel,.planet{transition:none}.panel.in{transition-delay:0s}}
+</style>
+</head>
+
+<body>
+<!-- ============================================================
+     HTML : LE CONTENU
+     Chaque balise <...> est comme un objet dans la hiérarchie
+     d'une scène Unity : certains en contiennent d'autres.
+     ============================================================ -->
+
+<!-- .space = la fenêtre de jeu. À l'intérieur : .world = la grande scène -->
+<div class="space" id="space">
+  <div class="world" id="world">
+
+    <!-- Le soleil. C'est un <h1> (titre principal de la page) stylé comme un rond.
+         id="sun" permet au JavaScript de le retrouver. -->
+    <h1 class="sun" id="sun">Ilan</h1>
+
+    <!-- Les 4 planètes. Ce sont des <button> : cliquables ET utilisables au clavier.
+         class="planet p-projets" = la classe commune + la classe de réglages propre à celle-ci.
+         data-panel="projets" = une étiquette que le JavaScript lit pour savoir quel panneau ouvrir. -->
+    <button class="planet p-projets" data-panel="projets"><span class="label">Projets</span></button>
+    <button class="planet p-competences" data-panel="competences"><span class="label">Compétences</span></button>
+    <button class="planet p-apropos" data-panel="apropos"><span class="label">À propos</span></button>
+    <button class="planet p-contact" data-panel="contact"><span class="label">Contact</span></button>
+  </div>
+</div>
+
+<!-- Le bouton retour (caché par défaut grâce à l'attribut hidden) et le texte d'aide -->
+<div class="hud"><button class="back" id="back" hidden>← Retour dans l’espace</button></div>
+<p class="hint" id="hint">Survole une planète pour la ralentir, clique pour y voyager.</p>
+
+<!-- Les 4 panneaux de contenu, un par planète. Tous cachés au départ (hidden).
+     id="panel-projets" etc. : le JavaScript construit ce nom à partir du data-panel de la planète.
+     style="--acc:#ff5d8f" : la couleur d'accent de ce panneau. -->
+<section class="panel" id="panel-projets" style="--acc:#ff5d8f" hidden aria-labelledby="t-projets">
+  <h2 id="t-projets" tabindex="-1">Projets</h2>   <!-- h2 = titre de section ; h3 = sous-titre -->
+  <h3>Yuv-Tales</h3>
+  <p>Un jeu Unity au rendu cel shading, inspiré de Monster Hunter Stories, avec un compagnon que l’on peut chevaucher.</p>
+  <h3>Kho’Shaï</h3>
+  <p>Un jeu de rôle construit autour d’une langue inventée, avec une énigme de chiffrement façon pierre de Rosette.</p>
+</section>
+
+<section class="panel" id="panel-competences" style="--acc:#4c8dff" hidden aria-labelledby="t-competences">
+  <h2 id="t-competences" tabindex="-1">Compétences</h2>
+  <ul class="tags">   <!-- ul = liste, li = un élément de la liste -->
+    <li>Unity</li><li>C#</li><li>Shaders URP</li><li>Cel shading</li><li>NavMesh</li>
+    <li>Machines à états</li><li>Interface animée</li><li>Git</li><li>Worldbuilding</li><li>Langues construites</li>
+  </ul>
+</section>
+
+<section class="panel" id="panel-apropos" style="--acc:#ffc93c" hidden aria-labelledby="t-apropos">
+  <h2 id="t-apropos" tabindex="-1">À propos</h2>
+  <p>Étudiant en <span class="todo">[ta formation, ton école]</span>. Ce qui m’attire dans le jeu vidéo, c’est l’endroit où la technique rencontre l’invention : un shader qui donne un style, une langue qui donne un monde.</p>
+  <p><span class="todo">[Un détail perso à ajouter ici.]</span></p>
+</section>
+
+<section class="panel" id="panel-contact" style="--acc:#19c3b1" hidden aria-labelledby="t-contact">
+  <h2 id="t-contact" tabindex="-1">Contact</h2>
+  <p>Je cherche un stage en développement de jeux. Écris-moi, ou regarde le code de mes projets.</p>
+  <div class="btns">
+    <a class="btn" href="mailto:ton.email@exemple.com">Envoyer un mail</a>   <!-- <a> = un lien ; mailto: ouvre le logiciel de mail -->
+    <a class="btn alt" href="https://github.com/TON-PSEUDO">Voir mon GitHub</a>
+  </div>
+  <p style="margin-top:1rem"><span class="todo">[Remplace le mail et le lien GitHub.]</span></p>
+</section>
+
+<script>
+/* ============================================================
+   JAVASCRIPT : LE COMPORTEMENT
+   Tout est enveloppé dans (function(){ ... })(); : ça garde nos
+   variables privées, pour qu'elles n'entrent pas en conflit
+   avec d'autres scripts.
+   ============================================================ */
+(function(){
+
+  /* --- 1. On récupère les éléments HTML dont on a besoin ---
+     document.getElementById("x") = trouver l'élément qui a id="x".
+     C'est un peu le GameObject.Find d'Unity. */
+  var space=document.getElementById('space'), world=document.getElementById('world'), sun=document.getElementById('sun');
+  var back=document.getElementById('back'), hint=document.getElementById('hint');
+
+  // L'utilisateur a-t-il demandé de réduire les animations ?
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Pour chaque planète, on crée un petit objet qui garde son état :
+     x, y = position actuelle ; size = taille ; a = rayon d'orbite ;
+     w = vitesse ; ang = angle actuel ; ring = son cercle d'orbite. */
+  var items=[].slice.call(world.querySelectorAll('.planet')).map(function(el){
+    return {el:el,x:0,y:0,size:0,a:0,w:0,ang:0,ring:null};
+  });
+
+  /* Variables d'état du programme :
+     current     = la planète où l'on est (null = on est dans l'espace)
+     activePanel = le panneau actuellement ouvert
+     speed       = vitesse réelle des orbites (1 = normal, 0 = arrêt)
+     target      = vitesse VISÉE : speed s'en rapproche en douceur
+     W,H         = taille du monde ; rx0,ry0 = rayons de la plus grande orbite */
+  var current=null, activePanel=null, speed=1, target=1, W=0, H=0, rx0=0, ry0=0;
+
+
+  /* --- 2. Les étoiles ---
+     On crée 140 petits <span> à des positions et tailles aléatoires
+     (Math.random() donne un nombre entre 0 et 1). */
+  for(var i=0;i<140;i++){
+    var s=document.createElement('span'), d=1+Math.random()*3.5;   // d = diamètre de l'étoile
+    s.className='star';
+    s.style.cssText='left:'+(Math.random()*2800-600)+'px;top:'+(Math.random()*2200-500)+'px;width:'+d+'px;height:'+d+'px;opacity:'+(.3+Math.random()*.7);
+    world.insertBefore(s,world.firstChild);   // on les ajoute dans le monde
+  }
+
+  /* Petite fonction utilitaire : lit la valeur d'une variable CSS (ex : --s)
+     sur un élément et la convertit en nombre. Ça permet de régler les
+     planètes dans le CSS et de les utiliser ici. */
+  function num(el,name){ return parseFloat(getComputedStyle(el).getPropertyValue(name)); }
+
+
+  /* --- 3. LES ORBITES : le cœur de l'animation ---
+     Une planète sur un cercle de rayon R, à l'angle "ang" autour d'un centre :
+         x = centreX + R × cos(ang)
+         y = centreY + R × sin(ang)
+     Ici on utilise une ELLIPSE (rayon horizontal rx0, rayon vertical ry0),
+     multipliée par "a" (0 à 1) pour que chaque planète ait sa propre orbite.
+     Cette fonction calcule la position de chaque planète et l'écrit dans
+     les variables CSS --x et --y (que le CSS utilise pour placer la planète). */
+  function place(){
+    items.forEach(function(p){
+      p.x=W/2+p.a*rx0*Math.cos(p.ang);
+      p.y=H/2+p.a*ry0*Math.sin(p.ang);
+      p.el.style.setProperty('--x',p.x);
+      p.el.style.setProperty('--y',p.y);
+      p.el.style.zIndex=Math.round(p.y);   // plus la planète est basse à l'écran, plus elle passe devant (effet de profondeur)
+    });
+  }
+
+  /* layout() : lit les tailles et réglages depuis le CSS, crée les cercles
+     d'orbite, puis place tout. On l'appelle au départ et quand la fenêtre
+     change de taille (par exemple en tournant un téléphone). */
+  function layout(){
+    W=num(world,'--W'); H=num(world,'--H');
+    rx0=W/2-100; ry0=H/2-100;     // rayons max, avec une marge de 100 pour ne pas toucher les bords
+    items.forEach(function(p){
+      p.size=num(p.el,'--s'); p.a=num(p.el,'--a'); p.w=num(p.el,'--w');
+      if(!p.ring){                 // premier passage seulement :
+        p.ang=num(p.el,'--t');     //   angle de départ
+        p.ring=document.createElement('div'); p.ring.className='orbit';   //   création du cercle d'orbite
+        world.insertBefore(p.ring,world.firstChild);
+      }
+      p.ring.style.width=(2*p.a*rx0)+'px'; p.ring.style.height=(2*p.a*ry0)+'px';   // diamètre = 2 × rayon
+    });
+    sun.style.zIndex=Math.round(H/2);   // le soleil est devant les planètes "du haut" et derrière celles "du bas"
+    place();
+  }
+
+
+  /* --- 4. LA CAMÉRA ---
+     Aucune vraie caméra : on applique au monde entier un "transform" CSS
+     qui le DÉPLACE (translate) et l'AGRANDIT (scale).
+     - Dans l'espace : on réduit le monde pour qu'il tienne dans l'écran.
+     - Sur une planète : on zoome pour qu'elle soit grande, placée à gauche
+       (ou en haut sur mobile) pour laisser la place au panneau de texte.
+     La transition CSS de .world fait le reste : le mouvement est animé tout seul. */
+  function camera(){
+    var vw=space.clientWidth, vh=space.clientHeight, scale, tx, ty;   // vw, vh = taille de l'écran
+    if(!current){
+      scale=Math.min(vw/W,vh/H);          // le plus grand zoom qui laisse tout le monde visible
+      tx=(vw-W*scale)/2; ty=(vh-H*scale)/2;   // on centre
+    }else{
+      var portrait=vw<=vh;                // écran plus haut que large ?
+      var diameter=portrait?Math.min(vw*.7,vh*.34):Math.min(vw*.42,vh*.7);   // taille voulue de la planète à l'écran
+      scale=Math.min(diameter/current.size,3.2);   // zoom nécessaire (limité à 3,2)
+      tx=(portrait?vw*.5:vw*.28)-current.x*scale;  // on décale pour amener la planète à l'endroit voulu
+      ty=(portrait?vh*.22:vh*.5)-current.y*scale;
+    }
+    world.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  }
+
+
+  /* --- 5. LA BOUCLE D'ANIMATION ---
+     requestAnimationFrame appelle "frame" avant chaque image affichée
+     (environ 60 fois par seconde). C'est l'équivalent de Update() dans Unity.
+     "dt" = le temps écoulé depuis l'image précédente (comme Time.deltaTime),
+     pour que la vitesse soit la même sur tous les écrans.
+     "speed" rejoint "target" progressivement : c'est ce qui permet de
+     ralentir en douceur au survol, au lieu de s'arrêter net. */
+  var last=performance.now();
+  function frame(now){
+    var dt=Math.min((now-last)/1000,.1); last=now;       // en secondes (plafonné pour éviter les gros sauts)
+    speed+=(target-speed)*Math.min(1,dt*4);              // lissage de la vitesse
+    if(!reduced && speed>.001){
+      items.forEach(function(p){ p.ang+=p.w*speed*dt; });   // on fait avancer l'angle de chaque planète
+      place();                                              // puis on recalcule les positions
+    }
+    requestAnimationFrame(frame);                        // on redemande une image : la boucle continue
+  }
+
+
+  /* --- 6. OUVRIR ET FERMER LES PANNEAUX --- */
+  function closePanel(){
+    if(!activePanel) return;
+    var p=activePanel; activePanel=null;
+    p.classList.remove('in');                 // le CSS fait disparaître le panneau en fondu...
+    setTimeout(function(){ if(!p.classList.contains('in')) p.hidden=true; },300);   // ...puis on le cache pour de bon
+  }
+
+
+  /* --- 7. VOYAGER VERS UNE PLANÈTE ---
+     Étapes : fermer l'ancien panneau, mémoriser la planète, tout arrêter
+     (la caméra vise alors une cible immobile), lancer la caméra, puis
+     afficher le panneau de cette planète. */
+  function travel(item){
+    if(current===item) return;                // déjà dessus : rien à faire
+    closePanel();
+    current=item; speed=0; target=0;          // les orbites s'arrêtent
+    world.classList.add('focused');           // le CSS cache les orbites et les noms
+    back.hidden=false; hint.hidden=true;      // on montre le bouton retour, on cache l'aide
+    camera();                                 // la caméra part vers la planète
+    var panel=document.getElementById('panel-'+item.el.dataset.panel);   // ex : "panel-projets"
+    panel.hidden=false; void panel.offsetWidth; panel.classList.add('in');   // (la ligne "void" force le navigateur à enregistrer l'état avant l'animation)
+    activePanel=panel;
+    panel.querySelector('h2').focus({preventScroll:true});   // le clavier et les lecteurs d'écran suivent le contenu
+  }
+
+
+  /* --- 8. REVENIR DANS L'ESPACE --- */
+  function goHome(){
+    if(!current) return;
+    var previous=current;
+    closePanel(); current=null;               // plus de planète active
+    world.classList.remove('focused');
+    back.hidden=true; hint.hidden=false;
+    camera();                                 // la caméra recule
+    previous.el.focus();
+    target=1;                                 // les orbites reprennent, en douceur
+  }
+
+
+  /* --- 9. LES ÉVÉNEMENTS : ce qui déclenche tout ---
+     addEventListener("quoi", fonction) = "quand ceci arrive, exécute cela". */
+  items.forEach(function(p){
+    var slow=function(){ if(!current) target=.15; };   // survol : ralentir
+    var fast=function(){ if(!current) target=1; };     // fin du survol : reprendre
+    p.el.addEventListener('click',function(){ travel(p); });
+    p.el.addEventListener('mouseenter',slow); p.el.addEventListener('mouseleave',fast);
+    p.el.addEventListener('focus',slow); p.el.addEventListener('blur',fast);   // pareil au clavier (touche Tab)
+  });
+  back.addEventListener('click',goHome);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') goHome(); });   // Échap = retour
+  window.addEventListener('resize',function(){ layout(); camera(); });                  // la fenêtre change de taille : on recalcule
+
+
+  /* --- 10. DÉMARRAGE --- */
+  layout();                       // calcule et place tout
+  camera();                       // cadre le monde entier
+  requestAnimationFrame(frame);   // lance la boucle d'animation
+})();
+</script>
+</body>
+</html>
